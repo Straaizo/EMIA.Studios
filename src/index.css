@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+/*
+ * Tokens semánticos runtime (cambian con el tema).
+ * La paleta neon se mantiene fija: es el acento de marca en ambos modos.
+ */
+:root,
+[data-theme="dark"] {
+  --bg: #0a0a0f;
+  --bg-soft: #101018;
+  --surface: rgba(20, 20, 29, 0.55);
+  --text: #ecedf5;
+  --text-muted: #a9aabb;
+  --text-faint: #75768a;
+  --border: rgba(255, 255, 255, 0.1);
+  --glow-alpha: 0.45;
+  --glow-blur: 90px;
+  --card-shadow: none;
+}
+
+[data-theme="light"] {
+  --bg: #f7f3ea;
+  --bg-soft: #efe9dc;
+  --surface: rgba(255, 255, 255, 0.72);
+  --text: #1c1810;
+  --text-muted: #5c5646;
+  --text-faint: #857f6d;
+  --border: rgba(28, 24, 16, 0.08);
+  --glow-alpha: 0.13;
+  --glow-blur: 130px;
+  --card-shadow: 0 1px 2px rgba(28, 24, 16, 0.04), 0 12px 32px -12px rgba(28, 24, 16, 0.14);
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-border: var(--border);
+
+  --color-neon-cyan: #2dd9f5;
+  --color-neon-green: #39ff9d;
+  --color-neon-orange: #ff8a3d;
+  --color-neon-magenta: #ff3dcb;
+  --color-neon-blue: #4d6bff;
+
+  --animate-spin-slow: spin 12s linear infinite;
+}
+
+html {
+  background-color: var(--bg);
+  color-scheme: light dark;
+  /* Crítico en mobile: si solo el body clipea overflow-x, el <html> igual se
+     dimensiona al ancho del contenido más ancho, y eso desplaza cualquier
+     elemento `position: fixed` (el navbar) fuera del viewport visible. */
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background: var(--color-neon-magenta);
+  color: var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--color-neon-cyan), var(--color-neon-magenta));
+  border-radius: 999px;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, var(--color-neon-cyan), var(--color-neon-blue), var(--color-neon-magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glow-orb {
+  filter: blur(var(--glow-blur));
+  opacity: var(--glow-alpha);
+  pointer-events: none;
+}
+
+/*
+ * Velo del hero: oscurece el tercio superior (legibilidad del texto) y funde
+ * el canvas 3D hacia var(--bg) en un tramo largo y no-lineal (varios stops
+ * imitando ease-out). Un degradado lineal de 2 puntos sobre contenido con
+ * mucho detalle (partículas) se percibe como un corte duro; con más stops
+ * concentrados hacia el final, el ojo no detecta un borde.
+ */
+.hero-veil {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.15) 20%,
+    transparent 38%,
+    transparent 54%,
+    color-mix(in srgb, var(--bg) 12%, transparent) 66%,
+    color-mix(in srgb, var(--bg) 35%, transparent) 76%,
+    color-mix(in srgb, var(--bg) 65%, transparent) 85%,
+    color-mix(in srgb, var(--bg) 90%, transparent) 93%,
+    var(--bg) 100%
+  );
+}
+
+.split-line {
+  overflow: hidden;
+}
+
+/* Foco visible consistente para navegación por teclado (WCAG 2.2 AA) */
+:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Enlace "saltar al contenido": oculto hasta recibir foco por teclado */
+.skip-link {
+  position: fixed;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  background: var(--color-neon-cyan);
+  color: var(--bg);
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: top 0.2s ease;
+}
+.skip-link:focus-visible {
+  top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
