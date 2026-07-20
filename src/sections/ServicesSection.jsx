@@ -70,15 +70,17 @@ export default function ServicesSection() {
           </p>
         </div>
 
-        {/* @container: el grid responde al ancho de su propio contenedor, no
-            solo al viewport. [MÓVIL] 1 columna · @sm 2 columnas (tablet) ·
-            @4xl 4 columnas ([PC], fila completa con las 4 cards). */}
-        <div className="@container">
-          <div ref={containerRef} className="grid gap-6 @sm:grid-cols-2 @4xl:grid-cols-4">
-            {SERVICES.map((service, index) => (
-              <ServiceCard key={service.title} {...service} index={index} />
-            ))}
-          </div>
+        {/* Breakpoints de viewport estándar (no consultas de contenedor):
+            mismo resultado visual en la práctica para este layout, pero
+            funciona en cualquier navegador sin depender de una feature CSS
+            de soporte más nuevo (~2023+). [MÓVIL] 1 columna · sm: 2
+            columnas (tablet) · lg: 4 columnas ([PC], fila completa — mismo
+            breakpoint que `lg:hidden` en ServiceCard, para que ambos
+            cambien juntos). */}
+        <div ref={containerRef} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {SERVICES.map((service, index) => (
+            <ServiceCard key={service.title} {...service} index={index} />
+          ))}
         </div>
       </div>
     </section>

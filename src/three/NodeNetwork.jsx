@@ -12,14 +12,17 @@ const SPREAD = 7;
  * Genera nodos aleatorios dentro de un volumen y las aristas entre
  * los que están a menos de CONNECT_DISTANCE. Se calcula una sola vez:
  * animar solo rotación/parallax del grupo evita recomputar geometría cada frame.
+ * `nodeCount` es variable (ver `lite` en NodeNetwork): las conexiones son
+ * O(n²), así que bajar de 90 a 45 nodos no solo dibuja menos puntos sino
+ * que corta ~4x el trabajo de calcular qué nodos conectar.
  */
-function useNetworkGeometry() {
+function useNetworkGeometry(nodeCount) {
   return useMemo(() => {
-    const positions = new Float32Array(NODE_COUNT * 3);
-    const colors = new Float32Array(NODE_COUNT * 3);
+    const positions = new Float32Array(nodeCount * 3);
+    const colors = new Float32Array(nodeCount * 3);
     const nodes = [];
 
-    for (let i = 0; i < NODE_COUNT; i++) {
+    for (let i = 0; i < nodeCount; i++) {
       const x = (Math.random() - 0.5) * SPREAD * 2;
       const y = (Math.random() - 0.5) * SPREAD;
       const z = (Math.random() - 0.5) * SPREAD;
@@ -37,8 +40,8 @@ function useNetworkGeometry() {
 
     const linePositions = [];
     const lineColors = [];
-    for (let i = 0; i < NODE_COUNT; i++) {
-      for (let j = i + 1; j < NODE_COUNT; j++) {
+    for (let i = 0; i < nodeCount; i++) {
+      for (let j = i + 1; j < nodeCount; j++) {
         const dist = nodes[i].distanceTo(nodes[j]);
         if (dist < CONNECT_DISTANCE) {
           linePositions.push(
@@ -57,13 +60,20 @@ function useNetworkGeometry() {
       linePositions: new Float32Array(linePositions),
       lineColors: new Float32Array(lineColors),
     };
-  }, []);
+  }, [nodeCount]);
 }
 
-export default function NodeNetwork({ reducedMotion = false }) {
+/**
+ * `lite`: hardware detectado como débil (ver getInitialQuality en
+ * HeroCanvas) — la mitad de los nodos (y por lo tanto muchas menos líneas,
+ * ver nota arriba) y sin Sparkles, que es un sistema de partículas/shader
+ * aparte y su propio draw call.
+ */
+export default function NodeNetwork({ reducedMotion = false, lite = false }) {
   const groupRef = useRef(null);
   const pointer = useRef({ x: 0, y: 0 });
-  const { positions, colors, linePositions, lineColors } = useNetworkGeometry();
+  const nodeCount = lite ? Math.round(NODE_COUNT / 2) : NODE_COUNT;
+  const { positions, colors, linePositions, lineColors } = useNetworkGeometry(nodeCount);
   const { size } = useThree();
 
   useFrame((state, delta) => {
@@ -128,7 +138,7 @@ export default function NodeNetwork({ reducedMotion = false }) {
         />
       </lineSegments>
 
-      {!reducedMotion && (
+      {!reducedMotion && !lite && (
         <Sparkles
           count={60}
           scale={[SPREAD * 2, SPREAD, SPREAD * 2]}

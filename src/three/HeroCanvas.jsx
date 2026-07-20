@@ -4,6 +4,20 @@ import { PerformanceMonitor } from "@react-three/drei";
 import NodeNetwork from "./NodeNetwork";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 
+// Heurística de hardware débil ANTES de renderizar el primer frame: en vez
+// de arrancar siempre "full" y esperar a que el PerformanceMonitor detecte
+// FPS bajo durante unos segundos (ventana en la que un equipo viejo ya
+// sufrió el jank), equipos con pocos núcleos o poca RAM arrancan directo en
+// menor calidad. `deviceMemory` no existe en Safari/Firefox — ahí solo se
+// evalúa `hardwareConcurrency`.
+function getInitialQuality() {
+  if (typeof navigator === "undefined") return { dpr: 1, lite: false };
+  const cores = navigator.hardwareConcurrency ?? 8;
+  const memory = navigator.deviceMemory; // undefined si el navegador no lo expone
+  const weak = cores <= 4 || (memory !== undefined && memory <= 4);
+  return weak ? { dpr: 0.75, lite: true } : { dpr: 1, lite: false };
+}
+
 /**
  * Canvas 3D del hero. Se monta perezosamente (lazy) desde HeroSection
  * y baja de calidad automáticamente si el frame rate cae.
@@ -15,10 +29,12 @@ import { useReducedMotion } from "../hooks/useReducedMotion";
  */
 export default function HeroCanvas({ active = true }) {
   const reducedMotion = useReducedMotion();
-  // Arranca en 1 (no en el devicePixelRatio completo): en pantallas retina/
-  // 2x+ eso multiplica por 4 la cantidad de píxeles a dibujar por frame para
-  // un fondo decorativo. PerformanceMonitor puede subirlo si sobra margen.
-  const [dpr, setDpr] = useState(1);
+  const [initialQuality] = useState(getInitialQuality);
+  // Arranca en 1 (no en el devicePixelRatio completo) o más bajo todavía en
+  // hardware detectado como débil: en pantallas retina/2x+ un dpr de 1 ya
+  // multiplica por 4 la cantidad de píxeles a dibujar por frame para un
+  // fondo decorativo. PerformanceMonitor puede subirlo si sobra margen.
+  const [dpr, setDpr] = useState(initialQuality.dpr);
   const [lost, setLost] = useState(false);
   const declinedRef = useRef(false);
 
@@ -76,7 +92,7 @@ export default function HeroCanvas({ active = true }) {
       <PerformanceMonitor onDecline={handleDecline} />
       <ambientLight intensity={0.4} />
       <Suspense fallback={null}>
-        <NodeNetwork reducedMotion={reducedMotion} />
+        <NodeNetwork reducedMotion={reducedMotion} lite={initialQuality.lite} />
       </Suspense>
     </Canvas>
   );

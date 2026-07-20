@@ -1,16 +1,19 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { SearchIcon, LayersIcon, TerminalIcon, RocketIcon } from "../components/icons";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /**
  * Sección "Proceso / Cómo ayudamos" (#proceso).
  * Timeline vertical: una línea SVG se va dibujando con el scroll (GSAP +
- * ScrollTrigger) detrás de 4 marcadores circulares, uno por paso. Cada paso
- * también tiene un glow ambiental a un costado (alternando izquierda/
- * derecha) que aparece con scroll junto con su texto — ver `side` abajo.
+ * ScrollTrigger) detrás de 4 marcadores circulares, uno por paso. [PC] Cada
+ * paso suma un ícono grande a la derecha del texto (oculto en móvil/tablet,
+ * donde no sobra ancho): un solo ScrollTrigger scrubeado recorre los 4 en
+ * orden estricto 01→02→03→04, encendiendo uno a la vez según la posición
+ * del scroll (nunca dos a la vez, nunca fuera de orden).
  */
 const STEPS = [
   {
@@ -18,28 +21,28 @@ const STEPS = [
     title: "Descubrimiento",
     description: "Entendemos tu negocio, usuarios y objetivos técnicos antes de escribir una línea de código.",
     accent: "#2dd9f5",
-    side: "left",
+    icon: SearchIcon,
   },
   {
     number: "02",
     title: "Diseño & Arquitectura",
     description: "Definimos la arquitectura del sistema y la experiencia de producto en conjunto con tu equipo.",
     accent: "#39ff9d",
-    side: "right",
+    icon: LayersIcon,
   },
   {
     number: "03",
     title: "Desarrollo",
     description: "Construcción iterativa con entregas frecuentes, testing continuo y visibilidad total del avance.",
     accent: "#ff8a3d",
-    side: "left",
+    icon: TerminalIcon,
   },
   {
     number: "04",
     title: "Lanzamiento & Soporte",
     description: "Desplegamos a producción y acompañamos la evolución del producto en el tiempo.",
     accent: "#ff3dcb",
-    side: "right",
+    icon: RocketIcon,
   },
 ];
 
@@ -47,44 +50,9 @@ export default function ProcessSection() {
   const sectionRef = useRef(null);
   const pathRef = useRef(null);
   const stepRefs = useRef([]);
-  const orbRefs = useRef([]);
-  // [PC] "Banda" vertical exclusiva de cada paso (top/height en px, medidos
-  // contra la posición real de cada <li>, no estimados). El glow de un paso
-  // se clipea (overflow-hidden) a su propia banda, que llega hasta el punto
-  // medio con el paso anterior/siguiente — así nunca se mete en el "rectángulo"
-  // del paso vecino, aunque el blur sea grande.
-  const [orbBands, setOrbBands] = useState([]);
+  const iconRefs = useRef([]);
+  const stepsListRef = useRef(null);
   const reducedMotion = useReducedMotion();
-
-  useLayoutEffect(() => {
-    function measure() {
-      const section = sectionRef.current;
-      if (!section) return;
-      const sectionTop = section.getBoundingClientRect().top;
-      const sectionHeight = section.getBoundingClientRect().height;
-
-      const rects = stepRefs.current.map((el) => {
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return { top: r.top - sectionTop, bottom: r.bottom - sectionTop };
-      });
-
-      setOrbBands(
-        rects.map((r, i) => {
-          if (!r) return { top: 0, height: 0 };
-          const prev = rects[i - 1];
-          const next = rects[i + 1];
-          const bandTop = prev ? (prev.bottom + r.top) / 2 : 0;
-          const bandBottom = next ? (r.bottom + next.top) / 2 : sectionHeight;
-          return { top: bandTop, height: Math.max(0, bandBottom - bandTop) };
-        })
-      );
-    }
-
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
 
   useLayoutEffect(() => {
     if (reducedMotion || !sectionRef.current || !pathRef.current) return;
@@ -106,7 +74,7 @@ export default function ProcessSection() {
         },
       });
 
-      stepRefs.current.forEach((el, i) => {
+      stepRefs.current.forEach((el) => {
         if (!el) return;
         gsap.fromTo(
           el,
@@ -122,28 +90,43 @@ export default function ProcessSection() {
             },
           }
         );
-
-        // El glow lateral de este paso aparece junto con su texto (mismo
-        // trigger). Solo se anima la opacidad del wrapper — el glow en sí
-        // mantiene su opacidad de tema (--glow-alpha) vía la clase
-        // .glow-orb del hijo, sin que GSAP la pise.
-        const orb = orbRefs.current[i];
-        if (orb) {
-          gsap.fromTo(
-            orb,
-            { opacity: 0 },
-            {
-              opacity: 1,
-              duration: 1,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: el,
-                start: "top 78%",
-              },
-            }
-          );
-        }
       });
+
+      // Un solo "foco" recorriendo los íconos en orden estricto 01→02→03→04,
+      // atado 1:1 al scroll (scrub, no un loop automático de fondo): solo el
+      // ícono del paso que corresponde a la posición actual del scroll está
+      // "encendido"; los demás quedan tenues. Dos razones para este cambio
+      // frente al latido anterior (que cada ícono encendía por su cuenta):
+      // 1) con varios pasos visibles a la vez, 2-3 íconos latiendo juntos
+      //    competían por la atención y se perdía la lectura 1-2-3-4;
+      // 2) una animación que se repite sola indefinidamente en background,
+      //    sin que el usuario la controle, va contra buenas prácticas de
+      //    accesibilidad (WCAG 2.2.2, "Pause, Stop, Hide") — al atarla al
+      //    scroll, se mueve (y retrocede) solo cuando el usuario scrollea.
+      const icons = iconRefs.current;
+      if (icons.some(Boolean) && stepsListRef.current) {
+        ScrollTrigger.create({
+          trigger: stepsListRef.current,
+          start: "top 70%",
+          end: "bottom 40%",
+          scrub: 0.4,
+          onUpdate: (self) => {
+            const active = Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length));
+            icons.forEach((icon, idx) => {
+              if (!icon) return;
+              const isActive = idx === active;
+              gsap.to(icon, {
+                scale: isActive ? 1.15 : 1,
+                opacity: isActive ? 0.85 : 0.32,
+                filter: `drop-shadow(0 0 ${isActive ? 26 : 8}px ${STEPS[idx].accent})`,
+                duration: 0.45,
+                ease: "power2.out",
+                overwrite: "auto",
+              });
+            });
+          },
+        });
+      }
     }, sectionRef);
 
     return () => ctx.revert();
@@ -152,46 +135,6 @@ export default function ProcessSection() {
   return (
     // Padding vertical: [MÓVIL] py-20 · tablet: sm:py-28 · [PC] lg:py-32
     <section id="proceso" ref={sectionRef} className="relative bg-bg py-20 sm:py-28 lg:py-32">
-      {/* [PC] Glow por paso, oculto en móvil/tablet (hidden lg:block): no
-          hay espacio lateral ("gutter") suficiente hasta que el contenido
-          deja de ocupar todo el ancho. Alternan lado según STEPS[i].side y
-          aparecen con scroll junto a su texto (ver ScrollTrigger arriba).
-          Cada uno va clipeado (overflow-hidden) a su propia banda vertical
-          (orbBands[i]) para que no se mezcle visualmente con el paso de
-          arriba/abajo — antes, al ser un blur grande sin límites, invadía
-          el "rectángulo" del vecino y se veía disperso/desordenado. */}
-      {STEPS.map((step, i) => {
-        const band = orbBands[i] ?? { top: 0, height: 0 };
-        // Máscara con fade arriba/abajo: contiene el glow dentro de su
-        // banda (igual que overflow-hidden) pero sin el corte recto — se
-        // apaga gradualmente en vez de terminar en un borde duro y visible.
-        const fadeMask =
-          "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)";
-        return (
-          <div
-            key={step.number}
-            className={`pointer-events-none absolute hidden overflow-hidden lg:block ${
-              step.side === "left" ? "left-0" : "right-0"
-            }`}
-            style={{
-              top: band.top,
-              height: band.height,
-              width: "16rem",
-              maskImage: fadeMask,
-              WebkitMaskImage: fadeMask,
-            }}
-          >
-            <div
-              ref={(el) => (orbRefs.current[i] = el)}
-              className="absolute top-1/2 h-56 w-56 -translate-y-1/2 opacity-0"
-              style={{ [step.side]: "-3.5rem" }}
-            >
-              <div className="glow-orb h-full w-full rounded-full" style={{ background: step.accent }} />
-            </div>
-          </div>
-        );
-      })}
-
       <div className="relative mx-auto max-w-5xl px-6 md:px-10">
         <div className="mb-14 max-w-2xl sm:mb-20">
           <span className="font-display text-xs uppercase tracking-[0.35em] text-neon-orange/80">
@@ -241,7 +184,7 @@ export default function ProcessSection() {
             </defs>
           </svg>
 
-          <ol className="relative flex flex-col gap-10 sm:gap-16">
+          <ol ref={stepsListRef} className="relative flex flex-col gap-10 sm:gap-16">
             {STEPS.map((step, i) => (
               <li
                 key={step.number}
@@ -269,6 +212,28 @@ export default function ProcessSection() {
                   {step.title}
                 </h3>
                 <p className="mt-3 max-w-lg text-base text-text-muted">{step.description}</p>
+
+                {/* [PC] Ícono grande en el espacio libre a la derecha del
+                    texto (max-w-lg deja bastante aire en pantallas anchas).
+                    Trazo fino en el color del paso. opacity-[0.35] es su
+                    estado de reposo Y el fallback si prefers-reduced-motion
+                    está activo (sin JS, todos quedan igual de tenues, sin
+                    "foco" — no hay forma neutral de elegir uno sin scroll).
+                    Con animación habilitada, el ScrollTrigger de más arriba
+                    controla la opacidad/escala/glow real: solo el ícono del
+                    paso activo según el scroll brilla fuerte, en secuencia
+                    01→02→03→04. El ícono en sí es un componente función (sin
+                    forwardRef), así que el ref para GSAP va en este <span>
+                    contenedor — pasarle `ref` directo al ícono se perdería
+                    en silencio. */}
+                <span
+                  ref={(el) => (iconRefs.current[i] = el)}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-4 top-1/2 hidden h-16 w-16 -translate-y-1/2 opacity-[0.35] lg:block xl:h-20 xl:w-20"
+                  style={{ color: step.accent }}
+                >
+                  <step.icon className="h-full w-full" />
+                </span>
               </li>
             ))}
           </ol>
