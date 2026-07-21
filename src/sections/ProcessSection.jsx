@@ -9,11 +9,12 @@ gsap.registerPlugin(ScrollTrigger);
 /**
  * Sección "Proceso / Cómo ayudamos" (#proceso).
  * Timeline vertical: una línea SVG se va dibujando con el scroll (GSAP +
- * ScrollTrigger) detrás de 4 marcadores circulares, uno por paso. [PC] Cada
- * paso suma un ícono grande a la derecha del texto (oculto en móvil/tablet,
- * donde no sobra ancho): un solo ScrollTrigger scrubeado recorre los 4 en
- * orden estricto 01→02→03→04, encendiendo uno a la vez según la posición
- * del scroll (nunca dos a la vez, nunca fuera de orden).
+ * ScrollTrigger) detrás de 4 marcadores circulares, uno por paso. Cada paso
+ * suma el mismo ícono en ambos breakpoints, con tratamiento distinto:
+ * [PC] grande al costado del texto, con un solo "foco" que recorre los 4 en
+ * orden estricto 01→02→03→04 según el scroll (gsap.matchMedia, solo existe
+ * a partir de 1024px) · [MÓVIL] como marca de agua difuminada detrás del
+ * texto, estática (sin JS).
  */
 const STEPS = [
   {
@@ -92,44 +93,65 @@ export default function ProcessSection() {
         );
       });
 
-      // Un solo "foco" recorriendo los íconos en orden estricto 01→02→03→04,
-      // atado 1:1 al scroll (scrub, no un loop automático de fondo): solo el
-      // ícono del paso que corresponde a la posición actual del scroll está
-      // "encendido"; los demás quedan tenues. Dos razones para este cambio
-      // frente al latido anterior (que cada ícono encendía por su cuenta):
-      // 1) con varios pasos visibles a la vez, 2-3 íconos latiendo juntos
-      //    competían por la atención y se perdía la lectura 1-2-3-4;
-      // 2) una animación que se repite sola indefinidamente en background,
-      //    sin que el usuario la controle, va contra buenas prácticas de
-      //    accesibilidad (WCAG 2.2.2, "Pause, Stop, Hide") — al atarla al
-      //    scroll, se mueve (y retrocede) solo cuando el usuario scrollea.
-      const icons = iconRefs.current;
-      if (icons.some(Boolean) && stepsListRef.current) {
-        ScrollTrigger.create({
-          trigger: stepsListRef.current,
-          start: "top 70%",
-          end: "bottom 40%",
-          scrub: 0.4,
-          onUpdate: (self) => {
-            const active = Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length));
-            icons.forEach((icon, idx) => {
-              if (!icon) return;
-              const isActive = idx === active;
-              gsap.to(icon, {
-                scale: isActive ? 1.15 : 1,
-                opacity: isActive ? 0.85 : 0.32,
-                filter: `drop-shadow(0 0 ${isActive ? 26 : 8}px ${STEPS[idx].accent})`,
-                duration: 0.45,
-                ease: "power2.out",
-                overwrite: "auto",
-              });
-            });
-          },
-        });
-      }
     }, sectionRef);
 
-    return () => ctx.revert();
+    // Un solo "foco" recorriendo los íconos en orden estricto 01→02→03→04,
+    // atado 1:1 al scroll (scrub, no un loop automático de fondo): solo el
+    // ícono del paso que corresponde a la posición actual del scroll está
+    // "encendido"; los demás quedan tenues. Dos razones para este diseño
+    // frente a un latido por ícono independiente:
+    // 1) con varios pasos visibles a la vez, 2-3 íconos latiendo juntos
+    //    competían por la atención y se perdía la lectura 1-2-3-4;
+    // 2) una animación que se repite sola indefinidamente en background,
+    //    sin que el usuario la controle, va contra buenas prácticas de
+    //    accesibilidad (WCAG 2.2.2, "Pause, Stop, Hide") — al atarla al
+    //    scroll, se mueve (y retrocede) solo cuando el usuario scrollea.
+    //
+    // gsap.matchMedia() lo limita a "min-width: 1024px" (el ícono ni
+    // siquiera se renderiza por debajo, `hidden lg:block`): sin esto, en
+    // mobile real este ScrollTrigger igual se creaba y en cada tick de
+    // scroll animaba `filter: drop-shadow` en 4 elementos invisibles —
+    // drop-shadow es de las propiedades más caras de compositar, y hacerlo
+    // sobre contenido oculto es trabajo 100% desperdiciado. En el emulador
+    // de escritorio no se nota (GPU de sobra); en un teléfono real, sí —
+    // eso era el lag reportado al scrollear esta sección para abajo.
+    const mm = gsap.matchMedia();
+    let lastActive = -1;
+    mm.add("(min-width: 1024px)", () => {
+      const icons = iconRefs.current;
+      if (!icons.some(Boolean) || !stepsListRef.current) return;
+
+      const trigger = ScrollTrigger.create({
+        trigger: stepsListRef.current,
+        start: "top 70%",
+        end: "bottom 40%",
+        scrub: 0.4,
+        onUpdate: (self) => {
+          const active = Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length));
+          if (active === lastActive) return; // nada cambió: no recrear tweens
+          lastActive = active;
+          icons.forEach((icon, idx) => {
+            if (!icon) return;
+            const isActive = idx === active;
+            gsap.to(icon, {
+              scale: isActive ? 1.15 : 1,
+              opacity: isActive ? 0.85 : 0.32,
+              filter: `drop-shadow(0 0 ${isActive ? 26 : 8}px ${STEPS[idx].accent})`,
+              duration: 0.45,
+              ease: "power2.out",
+              overwrite: "auto",
+            });
+          });
+        },
+      });
+
+      return () => trigger.kill();
+    });
+
+    return () => {
+      ctx.revert();
+      mm.revert();
+    };
   }, [reducedMotion]);
 
   return (
@@ -191,6 +213,19 @@ export default function ProcessSection() {
                 ref={(el) => (stepRefs.current[i] = el)}
                 className="relative pl-16 md:pl-24"
               >
+                {/* [MÓVIL] Mismo ícono que en PC, pero como marca de agua
+                    difuminada detrás del texto (no al costado: en mobile no
+                    sobra ancho para eso). Va primero en el DOM así queda
+                    detrás del marcador/texto en el orden de pintado, sin
+                    necesitar z-index. Estático (sin GSAP): al ser hijo del
+                    mismo <li> que ya anima su fade-in de arriba, aparece
+                    junto con el texto sin animación aparte ni costo extra. */}
+                <step.icon
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-2 top-0 h-28 w-28 opacity-[0.1] blur-[2px] lg:hidden"
+                  style={{ color: step.accent }}
+                />
+
                 {/* Marcador: [MÓVIL] h-8/w-8 (32px) · [PC] md:h-12/w-12 (48px) */}
                 <span
                   className="absolute left-0 top-2 flex h-8 w-8 items-center justify-center rounded-full border-2 md:h-12 md:w-12"

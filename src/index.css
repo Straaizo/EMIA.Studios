@@ -112,6 +112,14 @@ body {
   filter: blur(var(--glow-blur));
   opacity: var(--glow-alpha);
   pointer-events: none;
+  /* Sin esto, algunos navegadores mobile (sobre todo iOS) tardan un
+     instante en componer el blur en su propia capa de GPU: durante ese
+     instante el glow se ve más nítido/brillante de lo debido y recién
+     después "se asienta" en la versión difuminada — se percibe como que
+     el glow se prende y después se apaga. will-change fuerza esa capa
+     desde el primer render, antes de que el usuario llegue a verlo. */
+  will-change: filter, opacity;
+  transform: translateZ(0);
 }
 
 /*
