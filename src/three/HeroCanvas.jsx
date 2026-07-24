@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { PerformanceMonitor } from "@react-three/drei";
 import NodeNetwork from "./NodeNetwork";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 // Heurística de hardware débil ANTES de renderizar el primer frame: en vez
 // de arrancar siempre "full" y esperar a que el PerformanceMonitor detecte
@@ -29,12 +30,19 @@ function getInitialQuality() {
  */
 export default function HeroCanvas({ active = true }) {
   const reducedMotion = useReducedMotion();
+  const isMobile = useIsMobile();
   const [initialQuality] = useState(getInitialQuality);
+  // "lite" es hardware débil (pocos núcleos/RAM) O viewport mobile (<768px):
+  // menos partículas ahí de entrada, sin esperar a que el hardware se
+  // detecte lento. La interacción por mouse tampoco tiene sentido en touch
+  // (no hay hover real) — NodeNetwork la desactiva pero mantiene la
+  // autorrotación, así se ve vivo igual sin el jitter de eventos de touch.
+  const lite = initialQuality.lite || isMobile;
   // Arranca en 1 (no en el devicePixelRatio completo) o más bajo todavía en
-  // hardware detectado como débil: en pantallas retina/2x+ un dpr de 1 ya
+  // hardware/viewport débil: en pantallas retina/2x+ un dpr de 1 ya
   // multiplica por 4 la cantidad de píxeles a dibujar por frame para un
   // fondo decorativo. PerformanceMonitor puede subirlo si sobra margen.
-  const [dpr, setDpr] = useState(initialQuality.dpr);
+  const [dpr, setDpr] = useState(() => (lite ? Math.min(0.75, initialQuality.dpr) : initialQuality.dpr));
   const [lost, setLost] = useState(false);
   const declinedRef = useRef(false);
 
@@ -92,7 +100,7 @@ export default function HeroCanvas({ active = true }) {
       <PerformanceMonitor onDecline={handleDecline} />
       <ambientLight intensity={0.4} />
       <Suspense fallback={null}>
-        <NodeNetwork reducedMotion={reducedMotion} lite={initialQuality.lite} />
+        <NodeNetwork reducedMotion={reducedMotion} lite={lite} interactive={!isMobile} />
       </Suspense>
     </Canvas>
   );

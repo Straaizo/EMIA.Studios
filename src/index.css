@@ -1,34 +1,25 @@
 @import "tailwindcss";
 
 /*
- * Tokens semánticos runtime (cambian con el tema).
- * La paleta neon se mantiene fija: es el acento de marca en ambos modos.
+ * Tokens semánticos: la identidad de EMIA Studios es dark-only (sin toggle
+ * de tema claro) — estos valores son fijos, no cambian en runtime. Se
+ * mantienen como variables (en vez de hardcodear el hex en cada uso) porque
+ * medio proyecto ya referencia bg-bg/text-text/etc.
+ * --text-muted subido de #a9aabb a #c3c4d4: el anterior ya daba ~8.3:1 de
+ * contraste sobre las cards (bien por encima del mínimo AA de 4.5:1), pero
+ * este es más legible todavía (~11:1).
  */
-:root,
-[data-theme="dark"] {
+:root {
   --bg: #0a0a0f;
   --bg-soft: #101018;
   --surface: rgba(20, 20, 29, 0.55);
   --text: #ecedf5;
-  --text-muted: #a9aabb;
+  --text-muted: #c3c4d4;
   --text-faint: #75768a;
   --border: rgba(255, 255, 255, 0.1);
   --glow-alpha: 0.45;
   --glow-blur: 90px;
   --card-shadow: none;
-}
-
-[data-theme="light"] {
-  --bg: #f7f3ea;
-  --bg-soft: #efe9dc;
-  --surface: rgba(255, 255, 255, 0.72);
-  --text: #1c1810;
-  --text-muted: #5c5646;
-  --text-faint: #857f6d;
-  --border: rgba(28, 24, 16, 0.08);
-  --glow-alpha: 0.13;
-  --glow-blur: 130px;
-  --card-shadow: 0 1px 2px rgba(28, 24, 16, 0.04), 0 12px 32px -12px rgba(28, 24, 16, 0.14);
 }
 
 @theme {
@@ -50,11 +41,25 @@
   --color-neon-blue: #4d6bff;
 
   --animate-spin-slow: spin 12s linear infinite;
+  --animate-marquee: marquee 32s linear infinite;
+}
+
+/* Marquee del stack tecnológico: el track dobla su contenido (ver
+   TechStackSection) y se desplaza exactamente la mitad de su ancho total —
+   como la segunda mitad es una copia idéntica de la primera, el punto donde
+   "reinicia" es visualmente indistinguible del resto, sin salto. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 html {
   background-color: var(--bg);
-  color-scheme: light dark;
+  color-scheme: dark;
   /* Crítico en mobile: si solo el body clipea overflow-x, el <html> igual se
      dimensiona al ancho del contenido más ancho, y eso desplaza cualquier
      elemento `position: fixed` (el navbar) fuera del viewport visible. */
@@ -70,7 +75,6 @@ body {
   overflow-x: hidden;
   width: 100%;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {

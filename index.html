@@ -12,14 +12,6 @@
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300..800&family=Inter:wght@300..800&display=swap"
       rel="stylesheet"
     />
-    <script>
-      // Aplica el tema antes del primer paint para evitar flash (FOUC).
-      (function () {
-        var stored = localStorage.getItem("emia-theme");
-        var theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-        document.documentElement.setAttribute("data-theme", theme);
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -64,12 +64,17 @@ function useNetworkGeometry(nodeCount) {
 }
 
 /**
- * `lite`: hardware detectado como débil (ver getInitialQuality en
- * HeroCanvas) — la mitad de los nodos (y por lo tanto muchas menos líneas,
- * ver nota arriba) y sin Sparkles, que es un sistema de partículas/shader
- * aparte y su propio draw call.
+ * `lite`: hardware o viewport débil (ver HeroCanvas) — la mitad de los
+ * nodos (y por lo tanto muchas menos líneas, ver nota arriba) y sin
+ * Sparkles, que es un sistema de partículas/shader aparte y su propio draw
+ * call.
+ * `interactive`: false en mobile (HeroCanvas la apaga vía useIsMobile) — sin
+ * hover real no tiene sentido seguir el "mouse", y en touch los valores de
+ * `state.pointer` durante un scroll/drag son ruidosos (saltan con cada
+ * toque), lo que se traduciría en una rotación nerviosa en vez de suave.
+ * La autorrotación en Y se mantiene siempre, así igual se ve vivo.
  */
-export default function NodeNetwork({ reducedMotion = false, lite = false }) {
+export default function NodeNetwork({ reducedMotion = false, lite = false, interactive = true }) {
   const groupRef = useRef(null);
   const pointer = useRef({ x: 0, y: 0 });
   const nodeCount = lite ? Math.round(NODE_COUNT / 2) : NODE_COUNT;
@@ -79,12 +84,16 @@ export default function NodeNetwork({ reducedMotion = false, lite = false }) {
   useFrame((state, delta) => {
     if (reducedMotion || !groupRef.current) return;
 
-    const px = (state.pointer.x + 1) / 2;
-    const py = (state.pointer.y + 1) / 2;
+    groupRef.current.rotation.y += delta * 0.045;
+
+    if (!interactive) {
+      void size;
+      return;
+    }
+
     pointer.current.x += (state.pointer.x - pointer.current.x) * 0.03;
     pointer.current.y += (state.pointer.y - pointer.current.y) * 0.03;
 
-    groupRef.current.rotation.y += delta * 0.045;
     groupRef.current.rotation.x = THREE.MathUtils.lerp(
       groupRef.current.rotation.x,
       pointer.current.y * 0.25,
@@ -101,8 +110,6 @@ export default function NodeNetwork({ reducedMotion = false, lite = false }) {
     state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, pointer.current.y * 0.4, 0.04);
     state.camera.lookAt(0, 0, 0);
 
-    void px;
-    void py;
     void size;
   });
 

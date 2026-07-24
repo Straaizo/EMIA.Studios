@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Logo from "./Logo";
-import ThemeToggle from "./ThemeToggle";
 
 const LINKS = [
   { label: "Servicios", href: "#servicios" },
+  { label: "Clientes", href: "#clientes" },
   { label: "Nosotros", href: "#nosotros" },
   { label: "Proceso", href: "#proceso" },
   { label: "Contacto", href: "#contacto" },
@@ -98,10 +98,6 @@ export default function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          {/* [PC] Toggle de tema visible desde sm:, oculto en móvil angosto
-              (vive también dentro del panel `#mobile-menu` para [MÓVIL]) */}
-          <ThemeToggle className="hidden sm:flex" onDark={!scrolled} />
-
           {/* [PC] Botón "Hablemos" en línea, oculto en móvil */}
           <a
             href="#contacto"
@@ -159,15 +155,14 @@ export default function Navbar() {
                   </a>
                 </li>
               ))}
-              <li className={`mt-2 flex items-center justify-between gap-3 border-t pt-4 ${border}`}>
+              <li className={`mt-2 border-t pt-4 ${border}`}>
                 <a
                   href="#contacto"
                   onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-12 flex-1 items-center justify-center rounded-full border text-base ${border} ${chipBg} ${textStrong}`}
+                  className={`flex min-h-12 items-center justify-center rounded-full border text-base ${border} ${chipBg} ${textStrong}`}
                 >
                   Hablemos
                 </a>
-                <ThemeToggle onDark={!scrolled} />
               </li>
             </ul>
           </motion.div>
