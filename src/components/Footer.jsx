@@ -15,7 +15,16 @@ const LINKS = [
  */
 export default function Footer() {
   return (
-    <footer className="relative border-t border-border bg-bg py-14">
+    <footer className="relative overflow-hidden bg-bg py-14">
+      {/* Línea superior desvanecida en los extremos, no un border-t de punta
+          a punta: con el mismo fondo (bg-bg) que la sección de contacto de
+          arriba, un borde recto se leía como un corte artificial en un área
+          que por color ya es continua. */}
+      <div
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
+        aria-hidden="true"
+      />
+
       {/* [MÓVIL] flex-col · [PC] md:flex-row */}
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6 md:flex-row md:items-start md:justify-between md:px-10">
         <div className="max-w-xs">
@@ -69,7 +78,8 @@ export default function Footer() {
       </div>
 
       <div className="mx-auto mt-4 max-w-7xl px-6 md:px-10">
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-sm text-text-faint sm:flex-row">
+        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" aria-hidden="true" />
+        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-sm text-text-faint sm:flex-row">
           <span>© {new Date().getFullYear()} EMIA Studios. Todos los derechos reservados.</span>
           <span>Diseñado y desarrollado con obsesión por el detalle.</span>
         </div>

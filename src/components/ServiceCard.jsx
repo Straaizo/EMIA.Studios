@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import GlowOrb from "./GlowOrb";
+import { CheckIcon } from "./icons";
 
 // [MÓVIL] Posición del glow ambiental de cada card: alterna izquierda/derecha
 // card a card (índice par = izquierda, impar = derecha), como un zigzag.
@@ -13,7 +14,7 @@ const GLOW_POSITIONS = ["-left-12 bottom-2", "-right-12 bottom-2"];
  * Card de servicio con glassmorphism, tilt 3D siguiendo el mouse y glow
  * del color de acento asignado.
  */
-export default function ServiceCard({ icon: Icon, title, description, accent, index = 0 }) {
+export default function ServiceCard({ icon: Icon, title, description, accent, bullets = [], index = 0 }) {
   const ref = useRef(null);
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
@@ -76,6 +77,21 @@ export default function ServiceCard({ icon: Icon, title, description, accent, in
         <p className="relative mt-3 text-base leading-relaxed text-text-muted">
           {description}
         </p>
+
+        {bullets.length > 0 && (
+          <ul className="relative mt-5 flex flex-col gap-2 border-t border-border pt-5">
+            {bullets.map((bullet) => (
+              <li key={bullet} className="flex items-start gap-2 text-sm text-text-muted">
+                <CheckIcon
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                  style={{ color: accent }}
+                  aria-hidden="true"
+                />
+                {bullet}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <div
           className="absolute inset-x-0 bottom-0 h-px opacity-60"

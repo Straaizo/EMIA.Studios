@@ -16,7 +16,7 @@ export default function TechStackSection() {
   const items = [...TECH_STACK, ...TECH_STACK];
 
   return (
-    <section className="relative overflow-hidden border-y border-border bg-bg-soft py-10 sm:py-12">
+    <section className="relative overflow-hidden bg-bg-soft py-10 sm:py-12">
       <p className="mb-8 text-center font-display text-xs uppercase tracking-[0.35em] text-text-faint">
         Tecnologías que dominamos
       </p>
@@ -44,6 +44,15 @@ export default function TechStackSection() {
           </div>
         ))}
       </div>
+
+      {/* Línea inferior que separa de "Servicios", pero desvanecida en los
+          extremos (no de punta a punta): un borde recto se lee como el
+          límite de un módulo aparte; esta se funde con el fondo a los
+          costados, como si perteneciera al degradé de la franja. */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
+        aria-hidden="true"
+      />
     </section>
   );
 }

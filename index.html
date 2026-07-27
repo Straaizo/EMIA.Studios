@@ -2,16 +2,79 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Favicon: SVG para navegadores modernos, PNG como fallback (ambos
+         generados desde el logo real, no placeholders). theme-color pinta
+         la barra del navegador en mobile con el mismo negro del sitio. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="theme-color" content="#0a0a0f" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="EMIA Studios — Estudio de desarrollo de software, web y tecnología. Transformamos ideas en soluciones digitales." />
+    <meta
+      name="description"
+      content="EMIA Studios — Estudio de desarrollo de software, web y tecnología. Transformamos ideas en soluciones digitales."
+    />
+    <meta name="author" content="EMIA Studios" />
+    <meta
+      name="keywords"
+      content="desarrollo de software, desarrollo web, apps móviles, inteligencia artificial, business intelligence, Chile, Santiago"
+    />
     <title>EMIA Studios | Desarrollo de Software & Tecnología</title>
+
+    <!--
+      Open Graph / Twitter Card.
+      og:url y og:image usan un dominio placeholder (emiastudios.com) — hay
+      que reemplazarlo por el dominio real una vez que esté definido (ver
+      resumen final). og:image apunta a /og-image.png, generado a 1200x630
+      (medida estándar recomendada por Facebook/LinkedIn/Twitter) a partir
+      del logo real, así que no hace falta reemplazarlo — aunque se puede
+      cambiar por una pieza de diseño final más adelante.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="EMIA Studios | Desarrollo de Software & Tecnología" />
+    <meta
+      property="og:description"
+      content="Estudio de desarrollo de software, web y tecnología. Transformamos ideas en soluciones digitales."
+    />
+    <meta property="og:image" content="https://emiastudios.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://emiastudios.com/" />
+    <meta property="og:locale" content="es_CL" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="EMIA Studios | Desarrollo de Software & Tecnología" />
+    <meta
+      name="twitter:description"
+      content="Estudio de desarrollo de software, web y tecnología. Transformamos ideas en soluciones digitales."
+    />
+    <meta name="twitter:image" content="https://emiastudios.com/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300..800&family=Inter:wght@300..800&display=swap"
       rel="stylesheet"
     />
+
+    <!-- JSON-LD: schema.org Organization, para resultados de búsqueda enriquecidos. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "EMIA Studios",
+        "url": "https://emiastudios.com/",
+        "logo": "https://emiastudios.com/favicon.png",
+        "email": "hola@emiastudios.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Santiago",
+          "addressCountry": "CL"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
